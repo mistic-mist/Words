@@ -1,0 +1,11 @@
+{
+  "name": "LexiPrep – Vocab for Competitive Exams",
+  "short_name": "LexiPrep",
+  "description": "High-frequency English vocabulary trainer for BCS, GRE, and competitive exams",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "orientation": "portrait",
+  "categories": ["education", "productivity"]
+}
