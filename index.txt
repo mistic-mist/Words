@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WordLens</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a1a2e;
+      --paper: #f5f0e8;
+      --cream: #ede8dc;
+      --gold: #c9a84c;
+      --gold-light: #f0d080;
+      --rust: #b5451b;
+      --text: #2d2d2d;
+      --muted: #8a8070;
+    }
+
+```
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--paper);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(201,168,76,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(181,69,27,0.06) 0%, transparent 50%);
+}
+
+.page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 48px;
+  animation: fadeDown 0.6s ease both;
+}
+
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  color: var(--ink);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.logo span { color: var(--gold); }
+
+.tagline {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 8px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 300;
+}
+
+.search-wrap {
+  margin-bottom: 40px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+
+.search-inner {
+  display: flex;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: box-shadow 0.2s;
+}
+
+.search-inner:focus-within {
+  box-shadow: 6px 6px 0 var(--gold);
+}
+
+input {
+  flex: 1;
+  padding: 16px 20px;
+  border: none;
+  outline: none;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  color: var(--ink);
+  background: transparent;
+}
+
+input::placeholder { color: var(--muted); font-style: italic; }
+
+#searchBtn {
+  padding: 16px 28px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+#searchBtn:hover { background: var(--gold); color: var(--ink); }
+#searchBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.loader {
+  display: none;
+  text-align: center;
+  padding: 40px 0;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dots span {
+  width: 10px; height: 10px;
+  background: var(--gold);
+  border-radius: 50%;
+  animation: bounce 1s infinite;
+}
+
+.dots span:nth-child(2) { animation-delay: 0.15s; }
+.dots span:nth-child(3) { animation-delay: 0.3s; }
+
+.loader p {
+  margin-top: 14px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-style: italic;
+  letter-spacing: 1px;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-12px); }
+}
+
+.error {
+  display: none;
+  background: #fff5f5;
+  border: 1px solid var(--rust);
+  border-left: 4px solid var(--rust);
+  padding: 16px 20px;
+  border-radius: 4px;
+  color: var(--rust);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.card {
+  display: none;
+  background: white;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 6px 6px 0 var(--ink);
+  overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+}
+
+.card-top {
+  background: var(--ink);
+  padding: 28px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-top::after {
+  content: '"';
+  position: absolute;
+  right: 16px;
+  top: -24px;
+  font-family: 'Playfair Display', serif;
+  font-size: 10rem;
+  color: rgba(255,255,255,0.04);
+  pointer-events: none;
+}
+
+.word-display {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.8rem;
+  color: var(--paper);
+  line-height: 1.1;
+}
+
+.pos-badge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 3px 12px;
+  background: rgba(201,168,76,0.15);
+  border: 1px solid var(--gold);
+  border-radius: 2px;
+  color: var(--gold-light);
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.card-body { padding: 32px; }
+
+.section { margin-bottom: 26px; }
+.section:last-child { margin-bottom: 0; }
+
+.section-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--cream);
+}
+
+.definition-text {
+  font-size: 1rem;
+  color: var(--text);
+  line-height: 1.75;
+}
+
+.example-text {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--muted);
+  line-height: 1.7;
+  padding-left: 20px;
+  border-left: 3px solid var(--gold);
+}
+
+.synonyms-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.syn-tag {
+  padding: 6px 16px;
+  background: var(--cream);
+  border: 1.5px solid var(--ink);
+  border-radius: 2px;
+  font-size: 0.85rem;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.syn-tag:hover {
+  background: var(--gold);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.divider {
+  height: 1px;
+  background: var(--cream);
+  margin: 26px 0;
+}
+
+.history {
+  margin-top: 36px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.history-label {
+  font-size: 0.68rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.history-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-tag {
+  padding: 5px 14px;
+  border: 1px solid #d0c9bb;
+  border-radius: 2px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  transition: all 0.15s;
+}
+
+.history-tag:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--cream);
+}
+
+footer {
+  text-align: center;
+  margin-top: 60px;
+  font-size: 0.72rem;
+  color: #c0b8aa;
+  letter-spacing: 1px;
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+```
+
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo">Word<span>Lens</span></div>
+    <p class="tagline">Definition · Synonyms · Example</p>
+  </header>
+
+  <div class="search-wrap">
+    <div class="search-inner">
+      <input type="text" id="wordInput" placeholder="Type any word…" autocomplete="off" />
+      <button id="searchBtn">Search</button>
+    </div>
+  </div>
+
+  <div class="error" id="errorBox"></div>
+
+  <div class="loader" id="loader">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <p>Looking up your word…</p>
+  </div>
+
+  <div class="card" id="card">
+    <div class="card-top">
+      <div class="word-display" id="wordDisplay"></div>
+      <div class="pos-badge" id="posDisplay"></div>
+    </div>
+    <div class="card-body">
+      <div class="section">
+        <div class="section-label">Definition</div>
+        <div class="definition-text" id="definitionText"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="section-label">Example Sentence</div>
+        <div class="example-text" id="exampleText"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="section-label">Synonyms</div>
+        <div class="synonyms-wrap" id="synonymsWrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history" id="historySection" style="display:none">
+    <div class="history-label">Recent Searches</div>
+    <div class="history-tags" id="historyTags"></div>
+  </div>
+
+  <footer>Powered by Claude AI</footer>
+</div>
+
+<script>
+  const wordInput = document.getElementById('wordInput');
+  const searchBtn = document.getElementById('searchBtn');
+  const loader = document.getElementById('loader');
+  const card = document.getElementById('card');
+  const errorBox = document.getElementById('errorBox');
+  const historySection = document.getElementById('historySection');
+  const historyTags = document.getElementById('historyTags');
+
+  let searchHistory = [];
+
+  async function lookupWord(word) {
+    word = word.trim().toLowerCase();
+    if (!word) return;
+
+    wordInput.value = word;
+    card.style.display = 'none';
+    errorBox.style.display = 'none';
+    loader.style.display = 'block';
+    searchBtn.disabled = true;
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: `You are a dictionary. Respond ONLY with a JSON object — no markdown, no backticks, no explanation. Use this exact format:
+{
+  "word": "string",
+  "partOfSpeech": "string",
+  "definition": "string",
+  "example": "string",
+  "synonyms": ["word1","word2","word3","word4","word5"]
+}`,
+          messages: [{ role: "user", content: `Define: ${word}` }]
+        })
+      });
+
+      const data = await res.json();
+      const raw = data.content.map(b => b.text || '').join('');
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const result = JSON.parse(clean);
+
+      document.getElementById('wordDisplay').textContent = result.word;
+      document.getElementById('posDisplay').textContent = result.partOfSpeech;
+      document.getElementById('definitionText').textContent = result.definition;
+      document.getElementById('exampleText').textContent = `"${result.example}"`;
+
+      const synWrap = document.getElementById('synonymsWrap');
+      synWrap.innerHTML = '';
+      (result.synonyms || []).forEach(syn => {
+        const tag = document.createElement('span');
+        tag.className = 'syn-tag';
+        tag.textContent = syn;
+        tag.onclick = () => lookupWord(syn);
+        synWrap.appendChild(tag);
+      });
+
+      loader.style.display = 'none';
+      card.style.display = 'block';
+
+      if (!searchHistory.includes(result.word)) {
+        searchHistory.unshift(result.word);
+        if (searchHistory.length > 8) searchHistory.pop();
+        renderHistory();
+      }
+
+    } catch (err) {
+      loader.style.display = 'none';
+      errorBox.style.display = 'block';
+      errorBox.textContent = 'Something went wrong. Please try again.';
+    }
+
+    searchBtn.disabled = false;
+  }
+
+  function renderHistory() {
+    if (!searchHistory.length) { historySection.style.display = 'none'; return; }
+    historySection.style.display = 'block';
+    historyTags.innerHTML = '';
+    searchHistory.forEach(w => {
+      const tag = document.createElement('span');
+      tag.className = 'history-tag';
+      tag.textContent = w;
+      tag.onclick = () => lookupWord(w);
+      historyTags.appendChild(tag);
+    });
+  }
+
+  searchBtn.addEventListener('click', () => lookupWord(wordInput.value));
+  wordInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') lookupWord(wordInput.value);
+  });
+</script>
+
+</body>
+</html>
